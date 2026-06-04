@@ -1,0 +1,10 @@
+# Terraform
+*.tfvars
+*.tfstate
+*.tfstate.backup
+.terraform/
+
+# Secrets
+*.env
+credentials.json
+kubeconfig
