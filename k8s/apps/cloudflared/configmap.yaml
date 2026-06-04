@@ -10,5 +10,5 @@ data:
     no-autoupdate: true
     ingress:
     - hostname: grafana.carleid.dev
-      service: http://grafana.monitoring.svc.cluster.local:80
+      service: http://monitoring-grafana.monitoring.svc.cluster.local:80
     - service: http_status:404
