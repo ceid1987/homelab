@@ -1,0 +1,25 @@
+#cloud-config
+# ============================================================================
+# Runs once on first boot. Gets the server into a state Ansible can connect to:
+# ============================================================================
+
+users:
+  - name: ${admin_user}
+    groups: [sudo]
+    shell: /bin/bash
+    sudo: ["ALL=(ALL) NOPASSWD:ALL"]   # passwordless sudo for Ansible
+    ssh_authorized_keys:
+      - ${ssh_pubkey}
+
+# Move SSH to the custom port and disable password / root login.
+write_files:
+  - path: /etc/ssh/sshd_config.d/99-homelab.conf
+    content: |
+      Port ${ssh_port}
+      PasswordAuthentication no
+      PermitRootLogin no
+      PubkeyAuthentication yes
+
+
+runcmd:
+  - systemctl restart ssh || systemctl restart sshd

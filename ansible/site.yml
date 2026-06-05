@@ -1,0 +1,211 @@
+---
+# ==================================================================================
+# Homelab bootstrap playbook
+#   1. Time sync (chrony)             -   Syncs time for future S3 interactions
+#   2. K3S                            -   Download and install K3S
+#   3. kubeconfig + kubectl alias     -   Set up kubeconfig and aliases
+#   4. Namespaces                     -   Create namespaces
+#   5. Sealed Secrets                 -   Restore secret key then wipe it
+#   6. Sealed Secrets Controller      -   Set up secrets controller
+#   7. ArgoCD                         -   Install ArgoCD and start rollout
+#   8. Git                            -   Clone repo, apply manifests
+#   9. Local tooling                  -   Install kubeseal, rclone (S3 api)
+# ==================================================================================
+
+- name: Bootstrap homelab k3s cluster
+  hosts: homelab
+  become: true
+  gather_facts: true
+
+  tasks:
+
+    # 1. Time sync
+    # Clock must be in sync for S3 interactions
+
+    - name: Install chrony
+      ansible.builtin.apt:
+        name: chrony
+        state: present
+        update_cache: true
+
+    - name: Enable and start chrony
+      ansible.builtin.service:
+        name: chrony
+        state: started
+        enabled: true
+
+    - name: Force an immediate clock step
+      ansible.builtin.command: chronyc makestep
+      changed_when: false
+
+    # 2. K3S
+
+    - name: Download the k3s installer
+      ansible.builtin.get_url:
+        url: https://get.k3s.io
+        dest: /tmp/k3s-install.sh
+        mode: "0755"
+
+    - name: Install k3s (pinned version)
+      ansible.builtin.command: /tmp/k3s-install.sh
+      environment:
+        INSTALL_K3S_VERSION: "{{ k3s_version }}"
+        # 0644 non-root user
+        INSTALL_K3S_EXEC: "--write-kubeconfig-mode 0644"
+      args:
+        creates: /usr/local/bin/k3s   #makes this idempotent 
+
+    - name: Wait for the node to be Ready
+      ansible.builtin.command: >
+        kubectl wait --for=condition=Ready node --all --timeout=180s
+      environment:
+        KUBECONFIG: "{{ kubeconfig }}"
+      changed_when: false
+
+    # 3. Kubeconfig + aliases
+
+    - name: Create ~/.kube for {{ target_user }}
+      ansible.builtin.file:
+        path: "/home/{{ target_user }}/.kube"
+        state: directory
+        owner: "{{ target_user }}"
+        group: "{{ target_user }}"
+        mode: "0755"
+
+    - name: Copy kubeconfig to the user's home
+      ansible.builtin.copy:
+        src: "{{ kubeconfig }}"
+        dest: "/home/{{ target_user }}/.kube/config"
+        remote_src: true
+        owner: "{{ target_user }}"
+        group: "{{ target_user }}"
+        mode: "0600"
+
+    - name: Add `k` alias and autocomplete to the user's .bashrc
+      ansible.builtin.blockinfile:
+        path: "/home/{{ target_user }}/.bashrc"
+        marker: "# {mark} ANSIBLE MANAGED: kubectl"
+        block: |
+          alias k=kubectl
+          source <(kubectl completion bash)
+          complete -o default -F __start_kubectl k
+
+    # 4. Namespaces
+
+    - name: Create namespaces
+      ansible.builtin.shell: >
+        kubectl get namespace {{ item }} >/dev/null 2>&1
+        || kubectl create namespace {{ item }}
+      environment:
+        KUBECONFIG: "{{ kubeconfig }}"
+      loop: "{{ namespaces }}"
+      register: ns_result
+      changed_when: "'created' in ns_result.stdout"
+
+    # 5. Sealed secrets
+
+    - name: Stage the Sealed Secrets master key on the host
+      ansible.builtin.copy:
+        src: files/sealed-secrets-key.yaml
+        dest: /tmp/sealed-secrets-key.yaml
+        mode: "0600"
+
+    - name: Restore the master key into kube-system
+      ansible.builtin.command: kubectl apply -f /tmp/sealed-secrets-key.yaml
+      environment:
+        KUBECONFIG: "{{ kubeconfig }}"
+      register: key_restore
+      changed_when: "'created' in key_restore.stdout or 'configured' in key_restore.stdout"
+
+    - name: Wipe the staged key file
+      ansible.builtin.file:
+        path: /tmp/sealed-secrets-key.yaml
+        state: absent
+
+    # 6. Sealed Secrets Controller
+
+    - name: Install the Sealed Secrets controller
+      ansible.builtin.command: kubectl apply -f {{ sealed_secrets_manifest }}
+      environment:
+        KUBECONFIG: "{{ kubeconfig }}"
+      register: ss_install
+      changed_when: "'created' in ss_install.stdout or 'configured' in ss_install.stdout"
+
+    - name: Wait for the Sealed Secrets controller rollout
+      ansible.builtin.command: >
+        kubectl rollout status deploy/sealed-secrets-controller
+        -n kube-system --timeout=180s
+      environment:
+        KUBECONFIG: "{{ kubeconfig }}"
+      changed_when: false
+
+    # 7. ArgoCD
+
+    - name: Install ArgoCD
+      ansible.builtin.command: >
+        kubectl apply -n argocd -f {{ argocd_manifest }}
+      environment:
+        KUBECONFIG: "{{ kubeconfig }}"
+      register: argo_install
+      changed_when: "'created' in argo_install.stdout or 'configured' in argo_install.stdout"
+
+    - name: Wait for the ArgoCD server rollout
+      ansible.builtin.command: >
+        kubectl rollout status deploy/argocd-server -n argocd --timeout=300s
+      environment:
+        KUBECONFIG: "{{ kubeconfig }}"
+      changed_when: false
+
+    # 8. Git
+
+    - name: Install git
+      ansible.builtin.apt:
+        name: git
+        state: present
+
+    - name: Clone the homelab repo
+      ansible.builtin.git:
+        repo: "{{ repo_url }}"
+        dest: /opt/homelab
+        version: "{{ repo_branch }}"
+        update: true
+
+    - name: Apply the ArgoCD Application manifests
+      ansible.builtin.command: kubectl apply -f /opt/homelab/k8s/argocd/
+      environment:
+        KUBECONFIG: "{{ kubeconfig }}"
+      register: argo_apps
+      changed_when: "'created' in argo_apps.stdout or 'configured' in argo_apps.stdout"
+
+    # 9. Local tooling
+    
+    - name: Install kubeseal CLI
+      ansible.builtin.unarchive:
+        src: "https://github.com/bitnami-labs/sealed-secrets/releases/download/v{{ kubeseal_version }}/kubeseal-{{ kubeseal_version }}-linux-amd64.tar.gz"
+        dest: /usr/local/bin
+        remote_src: true
+        include:
+          - kubeseal
+        mode: "0755"
+        creates: /usr/local/bin/kubeseal
+
+    - name: Install rclone
+      ansible.builtin.apt:
+        name: rclone
+        state: present
+
+    - name: Create rclone config dir for {{ target_user }}
+      ansible.builtin.file:
+        path: "/home/{{ target_user }}/.config/rclone"
+        state: directory
+        owner: "{{ target_user }}"
+        group: "{{ target_user }}"
+        mode: "0700"
+
+    - name: Template the rclone config (Hetzner bucket)
+      ansible.builtin.template:
+        src: templates/rclone.conf.j2
+        dest: "/home/{{ target_user }}/.config/rclone/rclone.conf"
+        owner: "{{ target_user }}"
+        group: "{{ target_user }}"
+        mode: "0600"

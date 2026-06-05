@@ -1,0 +1,14 @@
+---
+# ============================================================================
+# TEMPLATE for Ansible Vault
+#
+# Create the real file and encrypt it:
+#   cp vault.yml.example vault.yml
+#   # edit vault.yml with your real S3 credentials
+#   ansible-vault encrypt vault.yml
+#
+# ============================================================================
+
+# Hetzner Object Storage S3 credentials (for rclone.conf)
+hetzner_s3_access_key: "YOUR_ACCESS_KEY"
+hetzner_s3_secret_key: "YOUR_SECRET_KEY"

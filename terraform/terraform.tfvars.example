@@ -1,0 +1,10 @@
+# Copy to terraform.tfvars and fill in. terraform.tfvars is gitignored.
+
+hcloud_token        = "YOUR_HETZNER_API_TOKEN"
+ssh_public_key_path = "~/.ssh/id_ed25519.pub"
+
+# Lock SSH to your own IP (find it: curl -4 ifconfig.co). /32 = just you.
+# ssh_allowed_ip = "203.0.113.7/32"
+
+# For a throwaway rebuild test, override the name so you don't touch the live box:
+# server_name = "homelab-test"
