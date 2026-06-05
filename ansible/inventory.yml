@@ -1,8 +1,6 @@
 all:
   hosts:
     homelab:
-      ansible_host: 5.75.169.194
+      ansible_host: vps_ip_here
       ansible_port: 2222
       ansible_user: carl
-      # If your user needs a sudo password, run the playbook with --ask-become-pass
-      # (or configure passwordless sudo for this user on the VPS).
