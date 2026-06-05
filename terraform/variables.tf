@@ -31,7 +31,7 @@ variable "server_type" {
 variable "server_image" {
   description = "OS image."
   type        = string
-  default     = "ubuntu-24.04"
+  default     = "ubuntu-26.04"
 }
 
 variable "location" {
