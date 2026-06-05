@@ -109,6 +109,23 @@ No plaintext secrets are committed to this repo. Sensitive values are handled as
 | Hetzner API token | Local `terraform.tfvars` (gitignored) |
 | S3 credentials | Ansible Vault (`group_vars/all/vault.yml`) |
 
-## Certifications
+## ArgoCD access
 
-Built while pursuing **CKA** (Certified Kubernetes Administrator), having previously passed **CKAD** (92%).
+Access it via SSH tunnel + port-forward:
+
+**1. Open the SSH tunnel**
+```bash
+ssh -L 8080:localhost:8080 carl@vps-ip -p 2222 -N
+```
+
+**2. Start the port-forward** (run on the VPS):
+```bash
+kubectl port-forward svc/argocd-server -n argocd 8080:443
+```
+
+**3. Open** `https://localhost:8080`
+
+Login with username `admin` and the password from:
+```bash
+kubectl get secret argocd-initial-admin-secret -n argocd -o jsonpath="{.data.password}" | base64 -d
+```

@@ -11,6 +11,4 @@ data:
     ingress:
     - hostname: grafana.carleid.dev
       service: http://monitoring-grafana.monitoring.svc.cluster.local:80
-    - hostname: argocd.carleid.dev
-      service: https://argocd-server.argocd.svc.cluster.local:443
     - service: http_status:404
