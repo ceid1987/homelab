@@ -111,7 +111,9 @@
         mode: "0600"
 
     - name: Restore the master key into kube-system
-      ansible.builtin.command: kubectl apply -f /tmp/sealed-secrets-key.yaml
+      ansible.builtin.shell: |
+        kubectl get secret sealed-secrets-keybwrjh -n kube-system >/dev/null 2>&1 \
+        || kubectl apply -f /tmp/sealed-secrets-key.yaml
       environment:
         KUBECONFIG: "{{ kubeconfig }}"
       register: key_restore
@@ -143,7 +145,7 @@
 
     - name: Install ArgoCD
       ansible.builtin.command: >
-        kubectl apply -n argocd -f {{ argocd_manifest }}
+        kubectl apply -n argocd -f {{ argocd_manifest }} --server-side --force-conflicts
       environment:
         KUBECONFIG: "{{ kubeconfig }}"
       register: argo_install
