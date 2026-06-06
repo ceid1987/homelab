@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: homelab-operator
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/ceid1987/homelab
+    path: k8s/operator
+    targetRevision: HEAD
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: operator-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
