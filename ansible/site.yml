@@ -9,7 +9,8 @@
 #   6. Sealed Secrets Controller      -   Set up secrets controller
 #   7. ArgoCD                         -   Install ArgoCD and start rollout
 #   8. Git                            -   Clone repo, apply manifests
-#   9. Local tooling                  -   Install kubeseal, rclone (S3 api)
+#   9. HomelabApp resources           -   Bootstrap operator managed apps
+#   10. Local tooling                  -   Install kubeseal, rclone (S3 api)
 # ==================================================================================
 
 - name: Bootstrap homelab k3s cluster
@@ -179,7 +180,16 @@
       register: argo_apps
       changed_when: "'created' in argo_apps.stdout or 'configured' in argo_apps.stdout"
 
-    # 9. Local tooling
+    # 9. Homelab resources
+
+    - name: Apply homelab resources
+      ansible.builtin.command: kubectl apply -f /opt/homelab/k8s/homelabapps/
+      environment:
+        KUBECONFIG: "{{ kubeconfig }}"
+      register: homelabapps
+      changed_when: "'created' in homelabapps.stdout or 'configured' in homelabapps.stdout"
+
+    # 10. Local tooling
     
     - name: Install kubeseal CLI
       ansible.builtin.unarchive:
