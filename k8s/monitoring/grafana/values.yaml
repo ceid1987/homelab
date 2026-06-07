@@ -8,9 +8,10 @@ grafana:
     size: 5Gi
     storageClassName: local-path
   grafana.ini:
+    server:
+      root_url: https://grafana.carleid.dev
     auth.anonymous:
-      enabled: true
-      org_role: Viewer
+      enabled: false
 
 prometheus:
   prometheusSpec:
