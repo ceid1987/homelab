@@ -72,7 +72,6 @@ spec:
                   into
                 type: string
             required:
-            - domain
             - path
             - repo
             - targetNamespace
@@ -287,6 +286,16 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
   - namespaces
   verbs:
   - create
@@ -454,6 +463,11 @@ spec:
         - --health-probe-bind-address=:8081
         command:
         - /manager
+        env:
+        - name: CLOUDFLARED_CONFIGMAP
+          value: cloudflared
+        - name: CLOUDFLARED_NAMESPACE
+          value: apps
         image: ghcr.io/ceid1987/homelab-operator:latest
         livenessProbe:
           httpGet:
@@ -462,11 +476,6 @@ spec:
           initialDelaySeconds: 15
           periodSeconds: 20
         name: manager
-        env:
-          - name: CLOUDFLARED_CONFIGMAP
-            value: "cloudflared"
-          - name: CLOUDFLARED_NAMESPACE
-            value: "apps"
         ports:
         - containerPort: 8081
           name: health
