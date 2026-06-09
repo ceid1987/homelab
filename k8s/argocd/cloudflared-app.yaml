@@ -16,3 +16,9 @@ spec:
     automated:
       prune: true
       selfHeal: true
+  ignoreDifferences:
+  - kind: ConfigMap
+    name: cloudflared
+    namespace: apps
+    jsonPointers:
+    - /data/config.yaml
