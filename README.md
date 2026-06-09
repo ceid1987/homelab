@@ -2,7 +2,7 @@
 
 Personal Kubernetes homelab running on a single Hetzner VPS, built with GitOps principles. Every component of the stack from server provisioning to application deployment is codified and reproducible from a single `terraform apply` and `ansible-playbook` run.
 
-Currently exposes: [grafana.carleid.dev](https://www.grafana.carleid.dev)
+Currently exposes: [homelab.carleid.dev](https://www.homelab.carleid.dev), [grafana.carleid.dev](https://www.grafana.carleid.dev)
 
 ## Stack
 
