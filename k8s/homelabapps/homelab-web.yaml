@@ -1,0 +1,10 @@
+apiVersion: homelab.carleid.dev/v1alpha1
+kind: HomelabApp
+metadata:
+  name: homelab-web
+  namespace: default
+spec:
+  repo: https://github.com/ceid1987/homelab
+  path: k8s/apps/homelab-web
+  domain: homelab.carleid.dev
+  targetNamespace: homelab-web

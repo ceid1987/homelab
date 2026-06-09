@@ -1,0 +1,323 @@
+.flowchart {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+}
+
+/* Let the page's dark gradient show through the canvas */
+.flowchart .react-flow,
+.flowchart .react-flow__renderer,
+.flowchart .react-flow__pane {
+  background: transparent;
+}
+
+/* The built-in "group" node type ships a gray background/border on the node
+   wrapper — strip it so our transparent GroupCard shows through. */
+.flowchart .react-flow__node-group {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+}
+
+/* Dragging is disabled, but keep hover highlights working on the cards. */
+.flowchart .react-flow__node {
+  pointer-events: auto !important;
+}
+
+/* ---------------------------------------------------------------- Card -- */
+.flow-card {
+  --card-color: #888;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  padding: 13px 15px;
+  border-radius: 16px;
+  color: #ededed;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+
+  /* very subtle colored gradient over dark glass */
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--card-color) 18%, transparent),
+      color-mix(in srgb, var(--card-color) 3%, transparent) 70%
+    ),
+    rgba(20, 20, 24, 0.55);
+  backdrop-filter: blur(10px) saturate(140%);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  border: 1px solid color-mix(in srgb, var(--card-color) 28%, rgba(255, 255, 255, 0.08));
+  box-shadow:
+    0 10px 30px -14px rgba(0, 0, 0, 0.8),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.flow-card:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--card-color) 55%, transparent);
+  box-shadow:
+    0 14px 34px -14px rgba(0, 0, 0, 0.85),
+    0 0 22px -10px var(--card-color),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.flowchart .react-flow__node.node-selected .flow-card {
+  border-color: color-mix(in srgb, var(--card-color) 80%, transparent);
+  box-shadow:
+    0 0 0 1px var(--card-color) inset,
+    0 0 28px -6px var(--card-color);
+}
+
+/* groups get the same highlight treatment (selected/hovered + plain hover) */
+.flow-group:hover {
+  border-color: color-mix(in srgb, var(--card-color) 75%, transparent);
+}
+
+.flowchart .react-flow__node.node-selected .flow-group {
+  border-color: color-mix(in srgb, var(--card-color) 95%, transparent);
+  box-shadow:
+    0 0 0 1px var(--card-color) inset,
+    0 0 30px -8px var(--card-color);
+}
+
+.flow-card__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.flow-card__logo {
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  font-size: 18px;
+  color: var(--card-color);
+  background: color-mix(in srgb, var(--card-color) 16%, rgba(255, 255, 255, 0.03));
+  border: 1px solid color-mix(in srgb, var(--card-color) 22%, transparent);
+}
+
+.flow-card__title {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.2px;
+  line-height: 1.1;
+}
+
+.flow-card__sub {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  color: var(--text-dim);
+  line-height: 1.2;
+}
+
+/* --------------------------------------------------------- Group card -- */
+.flow-group {
+  --card-color: #8a909b;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 22px;
+  color: #ededed;
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--card-color) 55%, transparent);
+}
+
+.flow-group__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+}
+
+.flow-group__logo {
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  font-size: 17px;
+  color: var(--card-color);
+  background: color-mix(in srgb, var(--card-color) 14%, rgba(255, 255, 255, 0.03));
+  border: 1px solid color-mix(in srgb, var(--card-color) 20%, transparent);
+}
+
+.flow-group__title {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.2px;
+}
+
+.flow-group__sub {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+/* hidden connection handles (shown only while editing the layout) */
+.flow-handle {
+  width: 6px;
+  height: 6px;
+  background: transparent;
+  border: none;
+  opacity: 0;
+}
+
+
+/* --------------------------------------------------------------- Edges -- */
+.flow-edge {
+  stroke: rgba(226, 232, 240, 0.38);
+  stroke-width: 1.5;
+}
+
+.flow-edge--dashed {
+  stroke-dasharray: 6 5;
+}
+
+/* clickable lines */
+.flowchart .react-flow__edge {
+  cursor: pointer;
+}
+
+/* active line (hovered or selected): thicker + brighter. */
+.flow-edge--active {
+  stroke: #f1f5f9;
+  stroke-width: 2.5;
+}
+
+/* dotted lines: flow the dashes (as before) */
+.flow-edge--dashed.flow-edge--active {
+  stroke-dasharray: 7 7;
+  animation: flow-dash 0.55s linear infinite;
+}
+
+@keyframes flow-dash {
+  to {
+    stroke-dashoffset: -14;
+  }
+}
+
+/* solid lines: a single bright pulse travels source→target */
+.flow-edge__pulse {
+  fill: none;
+  stroke: #ffffff;
+  stroke-width: 3;
+  stroke-linecap: round;
+  pointer-events: none;
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.8));
+  animation: flow-pulse 1.4s linear infinite;
+}
+
+@keyframes flow-pulse {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: calc(-1 * var(--flow-len, 0px));
+  }
+}
+
+/* custom arrowheads (drawn in LabeledEdge) */
+.flow-arrow {
+  fill: #94a3b8;
+}
+
+/* solid-active arrow brightens, then flashes as the pulse arrives */
+.flow-arrow--flow {
+  fill: #f1f5f9;
+  animation: arrow-flash 1.4s linear infinite;
+}
+
+@keyframes arrow-flash {
+  0%,
+  86% {
+    fill: #f1f5f9;
+    filter: none;
+  }
+  96% {
+    fill: #ffffff;
+    filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.95));
+  }
+  100% {
+    fill: #f1f5f9;
+    filter: none;
+  }
+}
+
+.flow-edge__label {
+  position: absolute;
+  max-width: 200px;
+  text-align: center;
+  white-space: pre-line;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  line-height: 1.35;
+  color: #e2e8f0;
+  padding: 3px 8px;
+  border-radius: 7px;
+  background: rgba(8, 8, 10, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  pointer-events: none;
+  /* paint above the cards (React Flow renders edge labels below nodes) */
+  z-index: 1001;
+}
+
+/* React Flow chrome tweaks */
+.flowchart .react-flow__controls {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px -12px rgba(0, 0, 0, 0.8);
+  /* sit just left of the minimap (200px wide) with a gap */
+  margin: 0 !important;
+  left: auto !important;
+  right: 232px !important;
+  bottom: 15px !important;
+}
+
+.flowchart .react-flow__controls button {
+  background: rgba(20, 20, 24, 0.85);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  color: #ededed;
+  fill: #ededed;
+}
+
+.flowchart .react-flow__controls button:hover {
+  background: rgba(40, 40, 48, 0.9);
+}
+
+.flowchart .react-flow__controls-button svg {
+  width: 15px;
+  height: 15px;
+  max-width: 15px;
+  max-height: 15px;
+  /* Lucide icons are line icons — render their stroke, not a fill */
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+/* annotations (edge labels) toggle */
+.hide-annotations .flow-edge__label {
+  display: none;
+}
+
+/* …but the hovered/selected line always shows its own label */
+.hide-annotations .flow-edge__label--active {
+  display: block;
+}
+
+.flowchart .react-flow__minimap {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+}

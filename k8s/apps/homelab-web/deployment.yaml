@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: homelab-web
+  namespace: homelab-web
+  labels:
+    app.kubernetes.io/name: homelab-web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: homelab-web
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: homelab-web
+    spec:
+      containers:
+        - name: web
+          image: ghcr.io/ceid1987/homelab-web:latest
+          ports:
+            - containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 64Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: homelab-web
+  namespace: homelab-web
+  labels:
+    app.kubernetes.io/name: homelab-web
+spec:
+  selector:
+    app.kubernetes.io/name: homelab-web
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80

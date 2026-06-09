@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: homelab-api
+  namespace: homelab-web
+  labels:
+    app.kubernetes.io/name: homelab-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: homelab-api
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: homelab-api
+    spec:
+      containers:
+        - name: api
+          image: ghcr.io/ceid1987/homelab-api:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: GRAFANA_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: homelab-web-secrets
+                  key: grafana-token
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 64Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: homelab-api
+  namespace: homelab-web
+  labels:
+    app.kubernetes.io/name: homelab-api
+spec:
+  selector:
+    app.kubernetes.io/name: homelab-api
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080

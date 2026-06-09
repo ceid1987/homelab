@@ -1,0 +1,168 @@
+.node-info {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.node-info__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.node-info__logo {
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  font-size: 24px;
+  color: var(--card-color, #a855f7);
+  background: color-mix(in srgb, var(--card-color, #a855f7) 16%, rgba(255, 255, 255, 0.03));
+  border: 1px solid color-mix(in srgb, var(--card-color, #a855f7) 28%, transparent);
+}
+
+.node-info__title {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: -0.3px;
+  color: #ffffff;
+}
+
+.node-info__desc {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-dim);
+}
+
+.node-info__link {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: var(--sm-accent, #a855f7);
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-color: color-mix(in srgb, var(--sm-accent, #a855f7) 45%, transparent);
+  transition: color 0.15s ease, text-decoration-color 0.15s ease;
+}
+
+.node-info__link:hover {
+  color: #ffffff;
+  text-decoration-color: #ffffff;
+}
+
+.node-info__logo--action {
+  --card-color: #a855f7;
+}
+
+.node-info__logo--info {
+  --card-color: #94a3b8;
+}
+
+.node-info__section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.node-info__subtitle {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+}
+
+/* actions list (in a node panel) */
+.action-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.action-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  padding: 9px 11px;
+  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: #ededed;
+  font-family: var(--font-sans);
+  font-size: 13.5px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.action-item:hover {
+  border-color: rgba(168, 85, 247, 0.6);
+  background: rgba(168, 85, 247, 0.1);
+}
+
+.action-item__dot {
+  flex: 0 0 6px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #a855f7;
+}
+
+/* node chips (in an action panel) */
+.node-chips {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.node-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 10px;
+  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: #ededed;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.node-chip:hover {
+  border-color: rgba(168, 85, 247, 0.6);
+  background: rgba(168, 85, 247, 0.1);
+}
+
+.node-chip__logo {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  font-size: 14px;
+  color: var(--card-color);
+  background: color-mix(in srgb, var(--card-color) 16%, rgba(255, 255, 255, 0.03));
+}
+
+.node-chip__arrow {
+  color: var(--text-dim);
+}
