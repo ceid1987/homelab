@@ -124,6 +124,248 @@
   background: #a855f7;
 }
 
+/* live status rows (health / uptime / gauge) */
+.live-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.live-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 11px;
+  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.live-row__label {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: #ededed;
+}
+
+.live-row__status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: #ffffff;
+}
+
+.live-row__value {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: #ffffff;
+}
+
+.live-row__muted {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.live-gauge {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 9px 11px;
+  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.live-gauge__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.live-gauge__val {
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+.live-gauge__track {
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.live-gauge__fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.4s ease, background 0.3s ease;
+}
+
+/* live ArgoCD status (in the argocd node panel) */
+.argo-msg {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.argo-msg--error {
+  color: #f59e0b;
+}
+
+.argo-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  padding: 9px 11px;
+  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.argo-summary:hover:not(:disabled) {
+  border-color: rgba(168, 85, 247, 0.6);
+  background: rgba(168, 85, 247, 0.1);
+}
+
+.argo-summary:disabled {
+  cursor: default;
+}
+
+.argo-summary__text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.argo-chevron {
+  flex: 0 0 auto;
+  color: var(--text-dim);
+  font-size: 12px;
+  transition: transform 0.18s ease;
+}
+
+.argo-chevron--open {
+  transform: rotate(180deg);
+}
+
+.argo-health {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+  color: #ffffff;
+}
+
+.argo-dot {
+  flex: 0 0 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.argo-counts {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.argo {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Smoothly animates open/closed by transitioning the grid row from 0fr to 1fr.
+   The child must clip its overflow for the collapse to take effect. */
+.argo-list-wrap {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.28s ease;
+}
+
+.argo-list-wrap--open {
+  grid-template-rows: 1fr;
+}
+
+.argo-list {
+  list-style: none;
+  margin: 0;
+  padding: 6px 0 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.argo-app {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 11px;
+  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.argo-app__main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.argo-app__name {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: #ededed;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.argo-app__ns {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.argo-app__badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.argo-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.argo-app__auto {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+}
+
 /* node chips (in an action panel) */
 .node-chips {
   display: flex;

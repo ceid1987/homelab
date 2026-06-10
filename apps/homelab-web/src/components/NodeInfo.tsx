@@ -4,6 +4,7 @@ import { initialNodes } from '../flow/nodes'
 import { allEdges } from '../flow/edges'
 import { nodeInfo } from '../flow/nodeInfo'
 import { actionInfo } from '../flow/actionInfo'
+import LiveStatus from './LiveStatus'
 import './NodeInfo.css'
 
 type Props = {
@@ -57,6 +58,8 @@ export default function NodeInfo({ id, onNavigate, onSelectAction, onHoverAction
       </div>
 
       {info && <p className="node-info__desc">{renderDesc(info.desc, onNavigate)}</p>}
+
+      <LiveStatus id={id} />
 
       {actions.length > 0 && (
         <div className="node-info__section">
