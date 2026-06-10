@@ -1,11 +1,13 @@
 import { useCallback, useRef, useState } from 'react'
 import { LuGithub, LuGlobe } from 'react-icons/lu'
+import { SiGrafana } from 'react-icons/si'
 import VariableProximity from './components/VariableProximity'
 import StaggeredMenu from './components/StaggeredMenu'
 import NodeInfo from './components/NodeInfo'
 import EdgeInfo from './components/EdgeInfo'
 import InfoPlaceholder from './components/InfoPlaceholder'
 import WelcomeModal from './components/WelcomeModal'
+import GrafanaModal from './components/GrafanaModal'
 import Flowchart from './flow/Flowchart'
 import './App.css'
 
@@ -14,6 +16,8 @@ type Selection = { kind: 'node' | 'edge'; id: string } | null
 function App() {
   const ctaRef = useRef<HTMLAnchorElement>(null)
   const repoRef = useRef<HTMLAnchorElement>(null)
+  const grafanaRef = useRef<HTMLButtonElement>(null)
+  const [grafanaOpen, setGrafanaOpen] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [selection, setSelection] = useState<Selection>(null)
   const [hoveredEdgeId, setHoveredEdgeId] = useState<string | null>(null)
@@ -101,6 +105,25 @@ function App() {
         <h1 className="site-title">homelab.carleid.dev</h1>
 
         <div className="site-header__right">
+          <button
+            ref={grafanaRef}
+            type="button"
+            className="site-cta"
+            onClick={() => setGrafanaOpen(true)}
+            aria-label="Grafana dashboards"
+          >
+            <SiGrafana className="site-cta__icon" aria-hidden="true" />
+            <VariableProximity
+              label="Grafana dashboards"
+              className="site-cta__text"
+              fromFontVariationSettings="'wght' 400"
+              toFontVariationSettings="'wght' 700"
+              containerRef={grafanaRef}
+              radius={100}
+              falloff="linear"
+            />
+          </button>
+
           <a
             ref={repoRef}
             className="site-cta"
@@ -144,6 +167,7 @@ function App() {
       </header>
 
       <WelcomeModal />
+      <GrafanaModal open={grafanaOpen} onClose={() => setGrafanaOpen(false)} />
     </div>
   )
 }
