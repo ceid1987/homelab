@@ -35,6 +35,8 @@ export default function LabeledEdge({
 
   const dashed = Boolean(data?.dashed)
   const active = Boolean(data?.active)
+  // Static brighten (no pulse) used by the legend category highlight.
+  const highlight = Boolean(data?.highlight) && !active
   const label = data?.label as string | undefined
   const hasArrow = Boolean(markerEnd)
   const solidActive = active && !dashed
@@ -54,7 +56,7 @@ export default function LabeledEdge({
       <BaseEdge
         id={id}
         path={path}
-        className={`flow-edge${dashed ? ' flow-edge--dashed' : ''}${active ? ' flow-edge--active' : ''}`}
+        className={`flow-edge${dashed ? ' flow-edge--dashed' : ''}${active ? ' flow-edge--active' : ''}${highlight ? ' flow-edge--highlight' : ''}`}
       />
 
       {solidActive && (
@@ -73,7 +75,7 @@ export default function LabeledEdge({
       {hasArrow && (
         <path
           d="M0,0 L-11,-6 L-11,6 Z"
-          className={`flow-arrow${solidActive ? ' flow-arrow--flow' : ''}`}
+          className={`flow-arrow${solidActive ? ' flow-arrow--flow' : ''}${highlight ? ' flow-arrow--hi' : ''}`}
           transform={`translate(${targetX} ${targetY}) rotate(${angle})`}
         />
       )}

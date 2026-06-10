@@ -2,6 +2,8 @@ import { memo } from 'react'
 import type { ReactNode } from 'react'
 import { Handle, Position } from '@xyflow/react'
 import type { Node, NodeProps } from '@xyflow/react'
+import NodeMetrics from '../components/NodeMetrics'
+import { useMetricsEnabled } from './MetricsContext'
 
 export type FlowCardData = {
   label: string
@@ -23,7 +25,8 @@ const SIDES = [
   { pos: Position.Left, id: 'left' },
 ] as const
 
-function FlowCardComponent({ data }: NodeProps<FlowCardNode>) {
+function FlowCardComponent({ id, data }: NodeProps<FlowCardNode>) {
+  const metricsOn = useMetricsEnabled()
   return (
     <div className="flow-card" style={{ ['--card-color' as any]: data.color }}>
       {SIDES.map(({ pos, id }) => (
@@ -32,6 +35,8 @@ function FlowCardComponent({ data }: NodeProps<FlowCardNode>) {
       {SIDES.map(({ pos, id }) => (
         <Handle key={`t-${id}`} type="target" position={pos} id={`t-${id}`} className="flow-handle" />
       ))}
+
+      <NodeMetrics nodeId={id} enabled={metricsOn} />
 
       <div className="flow-card__head">
         {data.icon && <span className="flow-card__logo">{data.icon}</span>}

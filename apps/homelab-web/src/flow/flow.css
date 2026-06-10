@@ -118,6 +118,97 @@
   line-height: 1.2;
 }
 
+/* ----------------------------------------------- On-chart metric overlay -- */
+.node-metrics {
+  position: absolute;
+  z-index: 6;
+  display: flex;
+  gap: 5px;
+  pointer-events: none;
+}
+
+.node-metrics--top {
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  flex-direction: row;
+}
+
+.node-metrics--bottom {
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  flex-direction: row;
+}
+
+.node-metrics--top-right {
+  top: 10px;
+  right: 12px;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+/* above the node, aligned to its right edge (grafana / prometheus health) */
+.node-metrics--above-right {
+  bottom: calc(100% + 6px);
+  right: 0;
+  flex-direction: row;
+}
+
+.node-metric {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(8, 8, 10, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  line-height: 1;
+  color: #ededed;
+  white-space: nowrap;
+}
+
+.node-metric__dot {
+  flex: 0 0 auto;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+
+.node-metric__text--muted {
+  color: var(--text-dim);
+}
+
+@keyframes metrics-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes metrics-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.node-metrics.is-on {
+  animation: metrics-in 0.25s ease both;
+}
+
+.node-metrics.is-off {
+  animation: metrics-out 0.25s ease both;
+}
+
 /* --------------------------------------------------------- Group card -- */
 .flow-group {
   --card-color: #8a909b;
@@ -192,6 +283,16 @@
 .flow-edge--active {
   stroke: #f1f5f9;
   stroke-width: 2.5;
+}
+
+/* legend category highlight: same brighten, but no flow animation. */
+.flow-edge--highlight {
+  stroke: #f1f5f9;
+  stroke-width: 2.5;
+}
+
+.flow-arrow--hi {
+  fill: #f1f5f9;
 }
 
 /* dotted lines: flow the dashes (as before) */
@@ -271,6 +372,8 @@
   pointer-events: none;
   /* paint above the cards (React Flow renders edge labels below nodes) */
   z-index: 1001;
+  /* fade when the line-labels toggle flips */
+  transition: opacity 0.25s ease;
 }
 
 /* React Flow chrome tweaks */
@@ -296,6 +399,26 @@
   background: rgba(40, 40, 48, 0.9);
 }
 
+/* disabled toggle (metrics / legend off): cross the icon out, like eye-off */
+.flowchart .react-flow__controls-button .ctrl-icon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flowchart .react-flow__controls-button .ctrl-icon--off::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 132%;
+  height: 1.5px;
+  background: currentColor;
+  border-radius: 2px;
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
 .flowchart .react-flow__controls-button svg {
   width: 15px;
   height: 15px;
@@ -307,17 +430,127 @@
   stroke-width: 2;
 }
 
-/* annotations (edge labels) toggle */
+/* annotations (edge labels) toggle — fade rather than hard hide */
 .hide-annotations .flow-edge__label {
-  display: none;
+  opacity: 0;
 }
 
 /* …but the hovered/selected line always shows its own label */
 .hide-annotations .flow-edge__label--active {
-  display: block;
+  opacity: 1;
 }
 
 .flowchart .react-flow__minimap {
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 8px;
+}
+
+/* ------------------------------------------------------------- Legend ---- */
+@keyframes legend-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes legend-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+.flow-legend {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(20, 20, 24, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 8px 24px -12px rgba(0, 0, 0, 0.8);
+}
+
+.flow-legend--in {
+  animation: legend-in 0.2s ease both;
+}
+
+.flow-legend--out {
+  animation: legend-out 0.2s ease both;
+}
+
+.flow-legend__title {
+  margin: 0 0 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+}
+
+.flow-legend__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.flow-legend__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 5px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  /* cascade in after the panel, staggered by index (--i) */
+  animation: legend-in 0.24s ease both;
+  animation-delay: calc(0.06s + var(--i, 0) * 0.04s);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flow-legend--in,
+  .flow-legend--out,
+  .flow-legend__item {
+    animation: none;
+  }
+}
+
+.flow-legend__item:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.flow-legend__swatch {
+  flex: 0 0 auto;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+}
+
+.flow-legend__label {
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  color: #ededed;
+}
+
+/* ---------------------------------------------------------------- mobile -- */
+/* the minimap eats too much of a phone screen (portrait or landscape) — hide it
+   and move the zoom controls to the right edge (they normally sit left of it). */
+@media (max-width: 640px), (max-height: 600px) and (orientation: landscape) {
+  .flowchart .react-flow__minimap {
+    display: none;
+  }
+
+  .flowchart .react-flow__controls {
+    right: 12px !important;
+  }
 }

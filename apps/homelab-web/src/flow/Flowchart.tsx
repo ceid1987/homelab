@@ -7,18 +7,20 @@ import {
   Controls,
   ControlButton,
   MiniMap,
+  Panel,
   useNodesState,
   useEdgesState,
   useReactFlow,
 } from '@xyflow/react'
 import type { NodeTypes, EdgeTypes } from '@xyflow/react'
-import { LuPlus, LuMinus, LuMaximize, LuEye, LuEyeOff } from 'react-icons/lu'
+import { LuPlus, LuMinus, LuMaximize, LuEye, LuEyeOff, LuTags, LuActivity } from 'react-icons/lu'
 import '@xyflow/react/dist/style.css'
 
 import FlowCard from './FlowCard'
 import GroupCard from './GroupCard'
 import LabeledEdge from './LabeledEdge'
-import { initialNodes } from './nodes'
+import { MetricsContext } from './MetricsContext'
+import { initialNodes, legend } from './nodes'
 import { allEdges } from './edges'
 import './flow.css'
 
@@ -50,25 +52,54 @@ function FlowCanvas({
   const [nodes, , onNodesChange] = useNodesState(initialNodes)
   const [edges, , onEdgesChange] = useEdgesState(allEdges)
   const [showAnnotations, setShowAnnotations] = useState(false)
+  const [showMetrics, setShowMetrics] = useState(true)
+  const [showLegend, setShowLegend] = useState(true)
+  // Keeps the legend mounted through its exit animation after being toggled off.
+  const [legendMounted, setLegendMounted] = useState(false)
+  // Colour of the legend row currently hovered — highlights its whole category.
+  const [legendColor, setLegendColor] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (showLegend) {
+      setLegendMounted(true)
+      return
+    }
+    if (!legendMounted) return
+    const t = setTimeout(() => setLegendMounted(false), 220)
+    return () => clearTimeout(t)
+  }, [showLegend, legendMounted])
+
+  const nodeColor = useMemo(() => new Map(initialNodes.map(n => [n.id, n.data.color as string])), [])
 
   const displayNodes = useMemo(
     () =>
       nodes.map(n => {
-        const cls = n.id === selectedNodeId || n.id === hoveredNodeId ? 'node-selected' : undefined
+        const cls =
+          n.id === selectedNodeId ||
+          n.id === hoveredNodeId ||
+          (legendColor != null && n.data.color === legendColor)
+            ? 'node-selected'
+            : undefined
         return n.className === cls ? n : { ...n, className: cls }
       }),
-    [nodes, selectedNodeId, hoveredNodeId],
+    [nodes, selectedNodeId, hoveredNodeId, legendColor],
   )
 
-  // A line animates its flow when hovered (chart or panel) or selected.
+  // A line animates its flow when hovered (chart or panel) or selected. A legend
+  // hover instead brightens every line whose endpoints touch that category.
   const activeEdgeId = hoveredEdgeId ?? selectedEdgeId
   const displayEdges = useMemo(
     () =>
       edges.map(e => {
         const active = e.id === activeEdgeId
-        return e.data?.active === active ? e : { ...e, data: { ...e.data, active } }
+        const highlight =
+          legendColor != null &&
+          (nodeColor.get(e.source) === legendColor || nodeColor.get(e.target) === legendColor)
+        return e.data?.active === active && e.data?.highlight === highlight
+          ? e
+          : { ...e, data: { ...e.data, active, highlight } }
       }),
-    [edges, activeEdgeId],
+    [edges, activeEdgeId, legendColor, nodeColor],
   )
 
   // Focus the current selection: a node, or both ends of an action's line.
@@ -91,6 +122,7 @@ function FlowCanvas({
   }, [selectedNodeId, selectedEdgeId, rf])
 
   return (
+    <MetricsContext.Provider value={showMetrics}>
     <ReactFlow
       nodes={displayNodes}
       edges={displayEdges}
@@ -145,8 +177,49 @@ function FlowCanvas({
         >
           {showAnnotations ? <LuEye /> : <LuEyeOff />}
         </ControlButton>
+        <ControlButton
+          onClick={() => setShowMetrics(s => !s)}
+          title={showMetrics ? 'Hide live metrics' : 'Show live metrics'}
+          aria-label="Toggle live metrics"
+        >
+          <span className={`ctrl-icon${showMetrics ? '' : ' ctrl-icon--off'}`}>
+            <LuActivity />
+          </span>
+        </ControlButton>
+        <ControlButton
+          onClick={() => setShowLegend(s => !s)}
+          title={showLegend ? 'Hide legend' : 'Show legend'}
+          aria-label="Toggle legend"
+        >
+          <span className={`ctrl-icon${showLegend ? '' : ' ctrl-icon--off'}`}>
+            <LuTags />
+          </span>
+        </ControlButton>
       </Controls>
+
+      {legendMounted && (
+        <Panel position="bottom-left">
+          <div className={`flow-legend ${showLegend ? 'flow-legend--in' : 'flow-legend--out'}`}>
+            <h4 className="flow-legend__title">Legend</h4>
+            <ul className="flow-legend__list">
+              {legend.map((item, i) => (
+                <li
+                  key={item.color}
+                  className="flow-legend__item"
+                  style={{ ['--i' as any]: i }}
+                  onMouseEnter={() => setLegendColor(item.color)}
+                  onMouseLeave={() => setLegendColor(null)}
+                >
+                  <span className="flow-legend__swatch" style={{ background: item.color }} />
+                  <span className="flow-legend__label">{item.label}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </Panel>
+      )}
     </ReactFlow>
+    </MetricsContext.Provider>
   )
 }
 

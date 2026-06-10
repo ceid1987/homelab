@@ -12,6 +12,7 @@ type Props = {
   onNavigate: (id: string) => void
   onSelectAction: (edgeId: string) => void
   onHoverAction: (edgeId: string | null) => void
+  onHoverNode: (id: string | null) => void
 }
 
 const labelOf = (id: string) => initialNodes.find(n => n.id === id)?.data.label ?? id
@@ -19,8 +20,13 @@ const labelOf = (id: string) => initialNodes.find(n => n.id === id)?.data.label 
 const actionName = (e: Edge) =>
   (e.data?.label as string) || actionInfo[e.id]?.title || `${labelOf(e.source)} → ${labelOf(e.target)}`
 
-// Split "...[label](id)..." into text + clickable link segments.
-function renderDesc(desc: string, onNavigate: (id: string) => void) {
+// Split "...[label](id)..." into text + clickable link segments. Each link
+// highlights its target node in the flowchart while hovered.
+function renderDesc(
+  desc: string,
+  onNavigate: (id: string) => void,
+  onHoverNode: (id: string | null) => void,
+) {
   const parts: React.ReactNode[] = []
   const re = /\[([^\]]+)\]\(([^)]+)\)/g
   let last = 0
@@ -30,7 +36,14 @@ function renderDesc(desc: string, onNavigate: (id: string) => void) {
     if (m.index > last) parts.push(<Fragment key={key++}>{desc.slice(last, m.index)}</Fragment>)
     const [, label, target] = m
     parts.push(
-      <button key={key++} type="button" className="node-info__link" onClick={() => onNavigate(target)}>
+      <button
+        key={key++}
+        type="button"
+        className="node-info__link"
+        onClick={() => onNavigate(target)}
+        onMouseEnter={() => onHoverNode(target)}
+        onMouseLeave={() => onHoverNode(null)}
+      >
         {label}
       </button>,
     )
@@ -40,7 +53,7 @@ function renderDesc(desc: string, onNavigate: (id: string) => void) {
   return parts
 }
 
-export default function NodeInfo({ id, onNavigate, onSelectAction, onHoverAction }: Props) {
+export default function NodeInfo({ id, onNavigate, onSelectAction, onHoverAction, onHoverNode }: Props) {
   const node = initialNodes.find(n => n.id === id)
   if (!node) return null
 
@@ -57,7 +70,7 @@ export default function NodeInfo({ id, onNavigate, onSelectAction, onHoverAction
         <h2 className="node-info__title">{node.data.label}</h2>
       </div>
 
-      {info && <p className="node-info__desc">{renderDesc(info.desc, onNavigate)}</p>}
+      {info && <p className="node-info__desc">{renderDesc(info.desc, onNavigate, onHoverNode)}</p>}
 
       <LiveStatus id={id} />
 

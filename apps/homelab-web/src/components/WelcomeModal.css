@@ -1,0 +1,60 @@
+.welcome-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.welcome-card {
+  width: 100%;
+  max-width: 440px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 28px;
+  border-radius: 16px;
+  background: rgba(14, 14, 18, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.85);
+}
+
+.welcome-card__title {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: -0.3px;
+  color: #ffffff;
+}
+
+.welcome-card__msg {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text-dim);
+}
+
+.welcome-card__btn {
+  align-self: flex-end;
+  margin-top: 6px;
+  padding: 9px 18px;
+  border-radius: 9px;
+  border: 1px solid color-mix(in srgb, #a855f7 50%, transparent);
+  background: color-mix(in srgb, #a855f7 18%, rgba(255, 255, 255, 0.03));
+  color: #ffffff;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.welcome-card__btn:hover {
+  border-color: #a855f7;
+  background: color-mix(in srgb, #a855f7 28%, rgba(255, 255, 255, 0.03));
+}

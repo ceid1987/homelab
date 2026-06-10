@@ -130,8 +130,10 @@
   left: 0;
   width: clamp(260px, 38vw, 420px);
   height: 100%;
-  /* faint base tint; the GlassSurface layer provides the frosted glass */
-  background: rgba(14, 14, 18, 0.22);
+  /* simple darkened panel with a soft blur instead of the glass surface */
+  background: rgba(10, 10, 14, 0.72);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-right: 1px solid rgba(255, 255, 255, 0.05);
   display: flex;
   flex-direction: column;
@@ -150,20 +152,30 @@
   border-left: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-/* GlassSurface fills the panel as its background glass layer */
-.sm-glass {
-  position: absolute !important;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
+/* Bottom-sheet drag handle (mobile only; hidden on desktop) */
+.sm-drag-handle {
+  display: none;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 0 8px;
+  cursor: grab;
+  /* let our pointer handlers own the gesture rather than the browser scrolling */
+  touch-action: none;
+  position: relative;
+  z-index: 2;
 }
 
-/* Soften GlassSurface's strong inset edge highlights so the panel blends in
-   rather than glowing — just a faint, subtle edge. */
-.sm-glass.glass-surface--svg,
-.sm-glass.glass-surface--fallback {
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04) !important;
-  border: none !important;
+.sm-drag-handle:active {
+  cursor: grabbing;
+}
+
+.sm-drag-handle::before {
+  content: '';
+  width: 40px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.28);
 }
 
 .sm-panel-inner {
@@ -253,60 +265,51 @@
   opacity: var(--sm-num-opacity, 0);
 }
 
-/* ---- Socials ----------------------------------------------------------- */
-.sm-socials {
-  margin-top: auto;
-  padding-top: 2rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.85rem;
-}
-
-.sm-socials-title {
-  margin: 0;
-  font-family: var(--font-sans);
-  font-size: 0.95rem;
-  font-weight: 500;
-  color: var(--sm-accent, #a36bd8);
-}
-
-.sm-socials-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 1.5rem;
-  flex-wrap: wrap;
-}
-
-.sm-socials-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 1rem;
-  font-weight: 500;
-  color: #ededed;
-  text-decoration: none;
-  padding: 2px 0;
-  transition: color 0.3s ease, opacity 0.3s ease;
-}
-
-.sm-socials-link:hover {
-  color: var(--sm-accent, #a36bd8);
-}
-
-.sm-socials-link:focus-visible {
-  outline: 2px solid var(--sm-accent, #a36bd8);
-  outline-offset: 3px;
-}
-
-@media (max-width: 640px) {
-  .staggered-menu-panel,
+/* Bottom sheet is portrait-only; landscape keeps the desktop-style side panel. */
+@media (max-width: 640px) and (orientation: portrait) {
+  /* prelayers are a side-reveal effect — irrelevant for a bottom sheet */
   .sm-prelayers {
-    width: 100%;
+    display: none;
+  }
+
+  /* Info panel becomes a bottom sheet: anchored to the bottom, partial height,
+     slid in/out vertically. The transform is driven by React (drag + snap),
+     not GSAP, so it works with mouse drag too. */
+  .staggered-menu-panel {
+    top: auto;
+    bottom: 0;
     left: 0;
     right: 0;
+    width: 100%;
+    height: 85vh;
+    height: 85dvh;
+    border: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 18px 18px 0 0;
+    /* GSAP sets opacity on desktop; it doesn't run on mobile, so force it on */
+    opacity: 1;
+    /* fallback before JS sets the transform — matches the peek snap */
+    transform: translateY(calc(100% - 200px));
+    box-shadow: 0 -22px 50px -24px rgba(0, 0, 0, 0.85);
+    will-change: transform;
+  }
+
+  [data-position='right'] .staggered-menu-panel {
+    border-left: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .sm-drag-handle {
+    display: flex;
+  }
+
+  /* tighter top padding since the drag handle now sits above the content */
+  .sm-panel-inner {
+    padding: 0.25em 1.5em 1.5em;
+  }
+
+  /* the panel is always visible on mobile, so the Info toggle is unnecessary */
+  .staggered-menu-header {
+    display: none;
   }
 }

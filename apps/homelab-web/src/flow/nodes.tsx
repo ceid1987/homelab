@@ -28,6 +28,17 @@ const C = {
   cluster: '#3b82f6', // blue cluster border
 } as const
 
+// Legend: colour → role label, for the flowchart legend control. Order is the
+// order shown in the panel.
+export const legend: { color: string; label: string }[] = [
+  { color: C.gitops, label: 'GitOps' },
+  { color: C.green, label: 'Provisioning' },
+  { color: C.hetzner, label: 'Infrastructure' },
+  { color: C.web, label: 'Web app' },
+  { color: C.monitoring, label: 'Monitoring' },
+  { color: C.traffic, label: 'Networking' },
+]
+
 // Position + size are computed from the semantic column spec in layout.ts.
 const boxes = computeBoxes()
 const box = (id: string) => {

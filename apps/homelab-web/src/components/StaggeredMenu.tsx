@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import VariableProximity from './VariableProximity';
-import GlassSurface from './GlassSurface';
+import { useMediaQuery } from '../hooks/useMediaQuery';
 import './StaggeredMenu.css';
 
 export interface StaggeredMenuItem {
@@ -10,17 +10,10 @@ export interface StaggeredMenuItem {
   link: string;
 }
 
-export interface StaggeredMenuSocialItem {
-  label: string;
-  link: string;
-}
-
 export interface StaggeredMenuProps {
   position?: 'left' | 'right';
   colors?: string[];
   items?: StaggeredMenuItem[];
-  socialItems?: StaggeredMenuSocialItem[];
-  displaySocials?: boolean;
   displayItemNumbering?: boolean;
   className?: string;
   menuButtonColor?: string;
@@ -38,31 +31,10 @@ export interface StaggeredMenuProps {
   body?: React.ReactNode;
 }
 
-function SocialIcon({ name }: { name: string }) {
-  const n = name.toLowerCase();
-  if (n.includes('github')) {
-    return (
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
-        <path d="M12 .5C5.73.5.5 5.73.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.28-.01-1.02-.02-2-3.2.7-3.88-1.54-3.88-1.54-.52-1.33-1.28-1.68-1.28-1.68-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.23-1.28-5.23-5.69 0-1.26.45-2.29 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11.1 11.1 0 0 1 5.8 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.8 1.19 1.83 1.19 3.09 0 4.42-2.69 5.39-5.25 5.68.41.35.78 1.05.78 2.12 0 1.53-.01 2.76-.01 3.14 0 .31.21.68.8.56A10.52 10.52 0 0 0 23.5 12C23.5 5.73 18.27.5 12 .5Z" />
-      </svg>
-    );
-  }
-  if (n.includes('linkedin')) {
-    return (
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
-        <path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.13 1.45-2.13 2.94v5.67H9.35V9h3.42v1.56h.05c.48-.9 1.64-1.85 3.38-1.85 3.61 0 4.28 2.38 4.28 5.47v6.27ZM5.34 7.43a2.07 2.07 0 1 1 0-4.14 2.07 2.07 0 0 1 0 4.14ZM7.12 20.45H3.55V9h3.57v11.45ZM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.22.79 24 1.77 24h20.45c.98 0 1.78-.78 1.78-1.73V1.73C24 .77 23.2 0 22.22 0Z" />
-      </svg>
-    );
-  }
-  return null;
-}
-
 export const StaggeredMenu: React.FC<StaggeredMenuProps> = ({
   position = 'left',
   colors = ['#B497CF', '#5227FF'],
   items = [],
-  socialItems = [],
-  displaySocials = true,
   displayItemNumbering = true,
   className,
   menuButtonColor = '#fff',
@@ -103,6 +75,93 @@ export const StaggeredMenu: React.FC<StaggeredMenuProps> = ({
   const busyRef = useRef(false);
   const itemEntranceTweenRef = useRef<gsap.core.Tween | null>(null);
 
+  // ---- Mobile bottom-sheet state & drag ---------------------------------
+  // On mobile the Info panel is a persistent bottom sheet with two snap points:
+  // 'peek' (always visible, tall enough to show the node's description) and
+  // 'full' (dragged up to reveal everything). It is never fully hidden, and
+  // selecting a node never auto-expands it — the flowchart stays visible behind.
+  type Snap = 'peek' | 'full';
+  // Height (px) left visible at the peek snap — just enough for the drag notch,
+  // the node header and its description; actions stay hidden until pulled up.
+  const PEEK_VISIBLE = 200;
+  // The bottom sheet is portrait-only; landscape (incl. mobile landscape) keeps
+  // the desktop-style side panel.
+  const isBottomSheet = useMediaQuery('(max-width: 640px) and (orientation: portrait)');
+  const [sheetSnap, setSheetSnap] = useState<Snap>('peek');
+  const [dragTranslate, setDragTranslate] = useState<number | null>(null);
+  const dragTranslateRef = useRef<number | null>(null);
+  const dragRef = useRef({ active: false, startY: 0, base: 0, height: 0, lastY: 0, lastT: 0, vel: 0 });
+
+  const setDT = useCallback((v: number | null) => {
+    dragTranslateRef.current = v;
+    setDragTranslate(v);
+  }, []);
+
+  // px offset (from fully open) for each snap point, given the sheet height.
+  const snapToPx = (snap: Snap, h: number) => (snap === 'full' ? 0 : Math.max(0, h - PEEK_VISIBLE));
+
+  const onHandleDown = useCallback(
+    (e: React.PointerEvent) => {
+      const panel = panelRef.current;
+      if (!panel) return;
+      const h = panel.offsetHeight;
+      const d = dragRef.current;
+      d.active = true;
+      d.startY = e.clientY;
+      d.base = snapToPx(sheetSnap, h);
+      d.height = h;
+      d.lastY = e.clientY;
+      d.lastT = performance.now();
+      d.vel = 0;
+      setDT(d.base);
+      e.currentTarget.setPointerCapture(e.pointerId);
+    },
+    [sheetSnap, setDT]
+  );
+
+  const onHandleMove = useCallback(
+    (e: React.PointerEvent) => {
+      const d = dragRef.current;
+      if (!d.active) return;
+      const now = performance.now();
+      let t = d.base + (e.clientY - d.startY);
+      // clamp between fully open (0) and the peek floor — never below peek
+      t = Math.max(0, Math.min(Math.max(0, d.height - PEEK_VISIBLE), t));
+      const dt = now - d.lastT;
+      if (dt > 0) {
+        d.vel = (e.clientY - d.lastY) / dt; // px/ms, positive = downward
+        d.lastY = e.clientY;
+        d.lastT = now;
+      }
+      setDT(t);
+    },
+    [setDT]
+  );
+
+  const onHandleUp = useCallback(
+    (e: React.PointerEvent) => {
+      const d = dragRef.current;
+      if (!d.active) return;
+      d.active = false;
+      const h = d.height || 1;
+      const peekPx = Math.max(0, h - PEEK_VISIBLE);
+      const t = dragTranslateRef.current ?? d.base;
+      const v = d.vel;
+      let next: Snap;
+      if (v < -0.55) next = 'full'; // flick up
+      else if (v > 0.55) next = 'peek'; // flick down
+      else next = t < peekPx / 2 ? 'full' : 'peek'; // otherwise nearest
+      setDT(null);
+      setSheetSnap(next);
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch {
+        /* pointer already released */
+      }
+    },
+    [setDT]
+  );
+
   useLayoutEffect(() => {
     const ctx = gsap.context(() => {
       const panel = panelRef.current;
@@ -111,6 +170,15 @@ export const StaggeredMenu: React.FC<StaggeredMenuProps> = ({
       const plusV = plusVRef.current;
       const icon = iconRef.current;
       if (!panel || !plusH || !plusV || !icon) return;
+
+      gsap.set(plusH, { transformOrigin: '50% 50%', rotate: 0 });
+      gsap.set(plusV, { transformOrigin: '50% 50%', rotate: 90 });
+      gsap.set(icon, { rotate: 0, transformOrigin: '50% 50%' });
+      if (toggleBtnRef.current) gsap.set(toggleBtnRef.current, { color: menuButtonColor });
+
+      // Mobile uses the CSS bottom-sheet (transform driven by React), so skip
+      // the GSAP side-panel positioning entirely.
+      if (isBottomSheet) return;
 
       let preLayers: HTMLElement[] = [];
       if (preContainer) {
@@ -123,13 +191,9 @@ export const StaggeredMenu: React.FC<StaggeredMenuProps> = ({
       if (preContainer) {
         gsap.set(preContainer, { xPercent: 0, opacity: 1 });
       }
-      gsap.set(plusH, { transformOrigin: '50% 50%', rotate: 0 });
-      gsap.set(plusV, { transformOrigin: '50% 50%', rotate: 90 });
-      gsap.set(icon, { rotate: 0, transformOrigin: '50% 50%' });
-      if (toggleBtnRef.current) gsap.set(toggleBtnRef.current, { color: menuButtonColor });
     });
     return () => ctx.revert();
-  }, [menuButtonColor, position]);
+  }, [menuButtonColor, position, isBottomSheet]);
 
   const buildOpenTimeline = useCallback(() => {
     const panel = panelRef.current;
@@ -147,12 +211,8 @@ export const StaggeredMenu: React.FC<StaggeredMenuProps> = ({
     const numberEls = Array.from(
       panel.querySelectorAll('.sm-panel-list[data-numbering] .sm-panel-item')
     ) as HTMLElement[];
-    const socialTitle = panel.querySelector('.sm-socials-title') as HTMLElement | null;
-    const socialLinks = Array.from(panel.querySelectorAll('.sm-socials-link')) as HTMLElement[];
 
     const offscreen = position === 'left' ? -100 : 100;
-    const layerStates = layers.map(el => ({ el, start: offscreen }));
-    const panelStart = offscreen;
 
     if (itemEls.length) {
       gsap.set(itemEls, { yPercent: 140, rotate: 10 });
@@ -160,24 +220,16 @@ export const StaggeredMenu: React.FC<StaggeredMenuProps> = ({
     if (numberEls.length) {
       gsap.set(numberEls, { '--sm-num-opacity': 0 });
     }
-    if (socialTitle) {
-      gsap.set(socialTitle, { opacity: 0 });
-    }
-    if (socialLinks.length) {
-      gsap.set(socialLinks, { y: 25, opacity: 0 });
-    }
 
     const tl = gsap.timeline({ paused: true });
 
-    layerStates.forEach((ls, i) => {
-      tl.fromTo(ls.el, { xPercent: ls.start }, { xPercent: 0, duration: 0.5, ease: 'power4.out' }, i * 0.07);
-    });
-    const lastTime = layerStates.length ? (layerStates.length - 1) * 0.07 : 0;
-    const panelInsertTime = lastTime + (layerStates.length ? 0.08 : 0);
-    const panelDuration = 0.65;
+    // Single slide: the panel and its colour layers move in together as one
+    // motion (no staggered pre-layers), so it reads as one panel opening.
+    const panelInsertTime = 0;
+    const panelDuration = 0.5;
     tl.fromTo(
-      panel,
-      { xPercent: panelStart },
+      [panel, ...layers],
+      { xPercent: offscreen },
       { xPercent: 0, duration: panelDuration, ease: 'power4.out' },
       panelInsertTime
     );
@@ -206,29 +258,6 @@ export const StaggeredMenu: React.FC<StaggeredMenuProps> = ({
             stagger: { each: 0.08, from: 'start' }
           },
           itemsStart + 0.1
-        );
-      }
-    }
-
-    if (socialTitle || socialLinks.length) {
-      const socialsStart = panelInsertTime + panelDuration * 0.4;
-      if (socialTitle) {
-        tl.to(socialTitle, { opacity: 1, duration: 0.5, ease: 'power2.out' }, socialsStart);
-      }
-      if (socialLinks.length) {
-        tl.to(
-          socialLinks,
-          {
-            y: 0,
-            opacity: 1,
-            duration: 0.55,
-            ease: 'power3.out',
-            stagger: { each: 0.08, from: 'start' },
-            onComplete: () => {
-              gsap.set(socialLinks, { clearProps: 'opacity' });
-            }
-          },
-          socialsStart + 0.04
         );
       }
     }
@@ -307,7 +336,10 @@ export const StaggeredMenu: React.FC<StaggeredMenuProps> = ({
       didMountRef.current = true;
       return;
     }
-    if (open) {
+    if (isBottomSheet) {
+      if (open) onMenuOpen?.();
+      else onMenuClose?.();
+    } else if (open) {
       onMenuOpen?.();
       playOpen();
     } else {
@@ -316,7 +348,7 @@ export const StaggeredMenu: React.FC<StaggeredMenuProps> = ({
     }
     animateIcon(open);
     animateColor(open);
-  }, [open, playOpen, playClose, animateIcon, animateColor, onMenuOpen, onMenuClose]);
+  }, [open, isBottomSheet, playOpen, playClose, animateIcon, animateColor, onMenuOpen, onMenuClose]);
 
   const toggleMenu = useCallback(() => setOpen(!open), [setOpen, open]);
   const closeMenu = useCallback(() => {
@@ -338,6 +370,20 @@ export const StaggeredMenu: React.FC<StaggeredMenuProps> = ({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [closeOnClickAway, open, closeMenu]);
+
+  const sheetTranslate =
+    dragTranslate != null
+      ? `${dragTranslate}px`
+      : sheetSnap === 'full'
+        ? '0%'
+        : `calc(100% - ${PEEK_VISIBLE}px)`;
+
+  const panelStyle: React.CSSProperties | undefined = isBottomSheet
+    ? {
+        transform: `translateY(${sheetTranslate})`,
+        transition: dragTranslate != null ? 'none' : 'transform 0.34s cubic-bezier(0.32, 0.72, 0, 1)'
+      }
+    : undefined;
 
   return (
     <div
@@ -386,20 +432,20 @@ export const StaggeredMenu: React.FC<StaggeredMenuProps> = ({
         </button>
       </header>
 
-      <aside id="staggered-menu-panel" ref={panelRef} className="staggered-menu-panel" aria-hidden={!open}>
-        <GlassSurface
-          className="sm-glass"
-          width="100%"
-          height="100%"
-          borderRadius={0}
-          blur={16}
-          displace={3.5}
-          backgroundOpacity={0.26}
-          saturation={1.3}
-          distortionScale={-40}
-          redOffset={0}
-          greenOffset={3}
-          blueOffset={6}
+      <aside
+        id="staggered-menu-panel"
+        ref={panelRef}
+        className="staggered-menu-panel"
+        aria-hidden={isBottomSheet ? false : !open}
+        style={panelStyle}
+      >
+        <div
+          className="sm-drag-handle"
+          onPointerDown={onHandleDown}
+          onPointerMove={onHandleMove}
+          onPointerUp={onHandleUp}
+          onPointerCancel={onHandleUp}
+          aria-hidden="true"
         />
         <div className="sm-panel-inner">
           {body ? <div className="sm-body">{body}</div> : null}
@@ -416,27 +462,6 @@ export const StaggeredMenu: React.FC<StaggeredMenuProps> = ({
             </ul>
           )}
 
-          {displaySocials && socialItems && socialItems.length > 0 && (
-            <div className="sm-socials" aria-label="Social links">
-              <h3 className="sm-socials-title">Socials</h3>
-              <ul className="sm-socials-list" role="list">
-                {socialItems.map((s, i) => (
-                  <li key={s.label + i} className="sm-socials-item">
-                    <a
-                      href={s.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="sm-socials-link"
-                      aria-label={s.label}
-                    >
-                      <SocialIcon name={s.label} />
-                      <span>{s.label}</span>
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
         </div>
       </aside>
     </div>

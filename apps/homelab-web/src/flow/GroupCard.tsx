@@ -2,6 +2,8 @@ import { memo } from 'react'
 import { Handle, Position } from '@xyflow/react'
 import type { NodeProps } from '@xyflow/react'
 import type { FlowCardNode } from './FlowCard'
+import NodeMetrics from '../components/NodeMetrics'
+import { useMetricsEnabled } from './MetricsContext'
 
 const SIDES = [
   { pos: Position.Top, id: 'top' },
@@ -15,7 +17,8 @@ const SIDES = [
  * cluster or the GitHub group). Child cards are real React Flow nodes parented
  * to this one, so they render on top of this frame.
  */
-function GroupCardComponent({ data }: NodeProps<FlowCardNode>) {
+function GroupCardComponent({ id, data }: NodeProps<FlowCardNode>) {
+  const metricsOn = useMetricsEnabled()
   return (
     <div className="flow-group" style={{ ['--card-color' as any]: data.color }}>
       {SIDES.map(({ pos, id }) => (
@@ -24,6 +27,8 @@ function GroupCardComponent({ data }: NodeProps<FlowCardNode>) {
       {SIDES.map(({ pos, id }) => (
         <Handle key={`t-${id}`} type="target" position={pos} id={`t-${id}`} className="flow-handle" />
       ))}
+
+      <NodeMetrics nodeId={id} enabled={metricsOn} />
 
       <div className="flow-group__head">
         {data.icon && <span className="flow-group__logo">{data.icon}</span>}

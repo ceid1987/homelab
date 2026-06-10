@@ -58,3 +58,44 @@
 .site-cta__text {
   cursor: pointer;
 }
+
+/* icon shown only on mobile (text CTAs collapse to icon buttons) */
+.site-cta__icon {
+  display: none;
+  width: 18px;
+  height: 18px;
+}
+
+/* ------------------------------------------------------- mobile portrait -- */
+@media (max-width: 640px) {
+  .site-header {
+    gap: 8px;
+    padding: 14px 14px;
+  }
+
+  .site-title {
+    font-size: 14px;
+    letter-spacing: 0.3px;
+  }
+
+  .site-header__right {
+    gap: 8px;
+  }
+}
+
+/* Collapse the text CTAs into compact icon buttons on any mobile screen —
+   portrait, or landscape (short height) where the side panel is retained. */
+@media (max-width: 640px), (max-height: 600px) and (orientation: landscape) {
+  .site-cta {
+    padding: 8px;
+  }
+
+  /* VariableProximity sets an inline `display: inline`, so override it */
+  .site-cta__text {
+    display: none !important;
+  }
+
+  .site-cta__icon {
+    display: inline-flex;
+  }
+}

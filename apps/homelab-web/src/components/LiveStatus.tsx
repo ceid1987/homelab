@@ -1,20 +1,9 @@
 import { useMetric } from '../hooks/useMetric'
 import ArgoStatus from './ArgoStatus'
 import { liveData } from '../flow/liveData'
+import { scalar, gaugeColor, fmtUptime, MUTED } from '../flow/metrics'
 
 const POLL_MS = 15000
-
-const scalar = (raw: string | undefined) =>
-  raw != null && raw !== '' ? parseFloat(raw) : null
-
-function fmtUptime(seconds: number) {
-  const d = Math.floor(seconds / 86400)
-  const h = Math.floor((seconds % 86400) / 3600)
-  const m = Math.floor((seconds % 3600) / 60)
-  if (d > 0) return `${d}d ${h}h`
-  if (h > 0) return `${h}h ${m}m`
-  return `${m}m`
-}
 
 function HealthRow({ label, endpoint }: { label: string; endpoint: string }) {
   const { data, error } = useMetric(endpoint, POLL_MS)
@@ -54,7 +43,7 @@ function GaugeRow({ label, endpoint }: { label: string; endpoint: string }) {
   const { data, error } = useMetric(endpoint, POLL_MS)
   const val = scalar(data?.result?.[0]?.value?.[1])
   const pct = val == null ? null : Math.max(0, Math.min(100, val))
-  const color = pct == null ? '#94a3b8' : pct < 70 ? '#22c55e' : pct < 90 ? '#f59e0b' : '#ef4444'
+  const color = pct == null ? MUTED : gaugeColor(pct)
   return (
     <div className="live-gauge">
       <div className="live-gauge__head">
@@ -64,9 +53,10 @@ function GaugeRow({ label, endpoint }: { label: string; endpoint: string }) {
         </span>
       </div>
       <div className="live-gauge__track">
+        {/* full-width green→red gradient, revealed left-to-right by the value */}
         <div
           className="live-gauge__fill"
-          style={{ width: pct == null ? '0%' : `${pct}%`, background: color }}
+          style={{ clipPath: `inset(0 ${pct == null ? 100 : 100 - pct}% 0 0)` }}
         />
       </div>
     </div>

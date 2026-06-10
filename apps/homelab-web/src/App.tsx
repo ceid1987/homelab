@@ -1,17 +1,13 @@
 import { useCallback, useRef, useState } from 'react'
+import { LuGithub, LuGlobe } from 'react-icons/lu'
 import VariableProximity from './components/VariableProximity'
 import StaggeredMenu from './components/StaggeredMenu'
-import type { StaggeredMenuSocialItem } from './components/StaggeredMenu'
 import NodeInfo from './components/NodeInfo'
 import EdgeInfo from './components/EdgeInfo'
 import InfoPlaceholder from './components/InfoPlaceholder'
+import WelcomeModal from './components/WelcomeModal'
 import Flowchart from './flow/Flowchart'
 import './App.css'
-
-const socialItems: StaggeredMenuSocialItem[] = [
-  { label: 'GitHub', link: 'https://github.com/ceid1987' },
-  { label: 'LinkedIn', link: 'https://www.linkedin.com/in/carl-eid/' },
-]
 
 type Selection = { kind: 'node' | 'edge'; id: string } | null
 
@@ -76,8 +72,6 @@ function App() {
         onOpenChange={handleOpenChange}
         closeOnClickAway={false}
         items={[]}
-        socialItems={socialItems}
-        displaySocials
         displayItemNumbering={false}
         accentColor="#a855f7"
         colors={['rgba(255, 255, 255, 0.05)', 'rgba(255, 255, 255, 0.09)']}
@@ -90,6 +84,7 @@ function App() {
               onNavigate={selectNode}
               onSelectAction={selectEdge}
               onHoverAction={setHoveredEdgeId}
+              onHoverNode={setHoveredNodeId}
             />
           ) : selection?.kind === 'edge' ? (
             <EdgeInfo id={selection.id} onNavigate={selectNode} onHoverNode={setHoveredNodeId} />
@@ -111,7 +106,9 @@ function App() {
             href="https://github.com/ceid1987/homelab"
             target="_blank"
             rel="noreferrer"
+            aria-label="Visit the repo"
           >
+            <LuGithub className="site-cta__icon" aria-hidden="true" />
             <VariableProximity
               label="Visit the repo"
               className="site-cta__text"
@@ -129,7 +126,9 @@ function App() {
             href="https://carleid.dev"
             target="_blank"
             rel="noreferrer"
+            aria-label="Visit my website"
           >
+            <LuGlobe className="site-cta__icon" aria-hidden="true" />
             <VariableProximity
               label="Visit my website"
               className="site-cta__text"
@@ -142,6 +141,8 @@ function App() {
           </a>
         </div>
       </header>
+
+      <WelcomeModal />
     </div>
   )
 }
