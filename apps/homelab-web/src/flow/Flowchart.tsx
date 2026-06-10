@@ -20,6 +20,7 @@ import FlowCard from './FlowCard'
 import GroupCard from './GroupCard'
 import LabeledEdge from './LabeledEdge'
 import { MetricsContext } from './MetricsContext'
+import { useMediaQuery } from '../hooks/useMediaQuery'
 import { initialNodes, legend } from './nodes'
 import { allEdges } from './edges'
 import './flow.css'
@@ -49,11 +50,14 @@ function FlowCanvas({
   onClearSelection,
 }: Props) {
   const rf = useReactFlow()
+  // Mobile (phone portrait or landscape): hide the controls panel; metrics on,
+  // line labels and legend off by default.
+  const isMobile = useMediaQuery('(max-width: 640px), (max-height: 600px) and (orientation: landscape)')
   const [nodes, , onNodesChange] = useNodesState(initialNodes)
   const [edges, , onEdgesChange] = useEdgesState(allEdges)
   const [showAnnotations, setShowAnnotations] = useState(false)
   const [showMetrics, setShowMetrics] = useState(true)
-  const [showLegend, setShowLegend] = useState(true)
+  const [showLegend, setShowLegend] = useState(() => !isMobile)
   // Keeps the legend mounted through its exit animation after being toggled off.
   const [legendMounted, setLegendMounted] = useState(false)
   // Colour of the legend row currently hovered — highlights its whole category.
@@ -156,6 +160,7 @@ function FlowCanvas({
         nodeBorderRadius={4}
         style={{ background: '#0b0b0f' }}
       />
+      {!isMobile && (
       <Controls showZoom={false} showFitView={false} showInteractive={false} position="bottom-right">
         <ControlButton onClick={() => rf.zoomIn()} title="Zoom in" aria-label="Zoom in">
           <LuPlus />
@@ -196,6 +201,7 @@ function FlowCanvas({
           </span>
         </ControlButton>
       </Controls>
+      )}
 
       {legendMounted && (
         <Panel position="bottom-left">
