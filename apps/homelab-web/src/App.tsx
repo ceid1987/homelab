@@ -59,6 +59,7 @@ function App() {
         selectedEdgeId={selectedEdgeId}
         hoveredEdgeId={hoveredEdgeId}
         hoveredNodeId={hoveredNodeId}
+        infoOpen={menuOpen}
         onSelectNode={selectNode}
         onSelectEdge={selectEdge}
         onHoverEdge={setHoveredEdgeId}

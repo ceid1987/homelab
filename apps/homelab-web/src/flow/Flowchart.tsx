@@ -33,6 +33,8 @@ type Props = {
   selectedEdgeId: string | null
   hoveredEdgeId: string | null
   hoveredNodeId: string | null
+  /** Whether the info side panel is open (so the legend can move clear of it). */
+  infoOpen: boolean
   onSelectNode: (id: string) => void
   onSelectEdge: (id: string) => void
   onHoverEdge: (id: string | null) => void
@@ -44,6 +46,7 @@ function FlowCanvas({
   selectedEdgeId,
   hoveredEdgeId,
   hoveredNodeId,
+  infoOpen,
   onSelectNode,
   onSelectEdge,
   onHoverEdge,
@@ -204,7 +207,17 @@ function FlowCanvas({
       )}
 
       {legendMounted && (
-        <Panel position="bottom-left">
+        <Panel
+          position="bottom-left"
+          style={{
+            // slide clear of the info side panel (same width), matching its
+            // GSAP motion: open = 0.5s power4.out, close = 0.32s power3.in.
+            transform: infoOpen ? 'translateX(clamp(260px, 38vw, 420px))' : 'translateX(0)',
+            transition: infoOpen
+              ? 'transform 0.5s cubic-bezier(0.22, 1, 0.36, 1)'
+              : 'transform 0.32s cubic-bezier(0.5, 0, 0.75, 0)',
+          }}
+        >
           <div className={`flow-legend ${showLegend ? 'flow-legend--in' : 'flow-legend--out'}`}>
             <h4 className="flow-legend__title">Legend</h4>
             <ul className="flow-legend__list">
