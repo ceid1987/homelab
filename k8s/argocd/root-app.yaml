@@ -1,0 +1,20 @@
+# App-of-apps: manages the Application manifests in k8s/argocd/ (including itself)
+# Bootstrap once with: kubectl apply -f k8s/argocd/root-app.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: root
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/ceid1987/homelab.git
+    targetRevision: HEAD
+    path: k8s/argocd
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
