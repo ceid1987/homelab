@@ -13,6 +13,33 @@ grafana:
     auth.anonymous:
       enabled: false
 
+# Drop bracketed-IPv6 targets before scraping.
+# The metrics_path relabeling is the chart default
+# these lists replaces the defaults entirely.
+kubelet:
+  serviceMonitor:
+    relabelings:
+      - action: replace
+        sourceLabels: [__metrics_path__]
+        targetLabel: metrics_path
+      - action: drop
+        sourceLabels: [__address__]
+        regex: '\[.*'
+    cAdvisorRelabelings:
+      - action: replace
+        sourceLabels: [__metrics_path__]
+        targetLabel: metrics_path
+      - action: drop
+        sourceLabels: [__address__]
+        regex: '\[.*'
+    probesRelabelings:
+      - action: replace
+        sourceLabels: [__metrics_path__]
+        targetLabel: metrics_path
+      - action: drop
+        sourceLabels: [__address__]
+        regex: '\[.*'
+
 prometheus:
   prometheusSpec:
     retention: 15d

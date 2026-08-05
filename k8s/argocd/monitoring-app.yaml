@@ -8,7 +8,9 @@ spec:
   sources:
     - repoURL: https://prometheus-community.github.io/helm-charts
       chart: kube-prometheus-stack
-      targetRevision: "*"
+      # Pinned: "*" let ArgoCD auto-upgrade the whole monitoring stack on every
+      # chart release. Bump deliberately via commit.
+      targetRevision: "88.1.5"
       helm:
         valueFiles:
         - $values/k8s/monitoring/grafana/values.yaml
