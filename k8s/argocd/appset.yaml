@@ -1,0 +1,47 @@
+# Discovers applications by scanning the carleid-homelab org for repositories
+# containing a deploy/ directory. Adding an app to the cluster is creating such
+# a repository; nothing here needs editing.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: homelab-apps
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - scmProvider:
+        github:
+          organization: carleid-homelab
+          tokenRef:
+            secretName: github-scm-token
+            key: token
+        # The sole guard against pulling in unrelated repositories. Repos
+        # without a deploy/ directory on their default branch are skipped,
+        # which is why homelab-operator is not picked up here.
+        filters:
+          - pathsExist: [deploy]
+  # create-update means a failed scan can never prune live Applications; a
+  # deleted repo has to be cleaned up by hand.
+  syncPolicy:
+    applicationsSync: create-update
+  template:
+    metadata:
+      name: '{{ .repository }}'
+    spec:
+      project: default
+      source:
+        repoURL: '{{ .url }}'
+        path: deploy
+        # CI renders the image tag into deploy/ and publishes it here. main
+        # holds the un-pinned manifests and is never synced.
+        targetRevision: deploy
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{ .repository }}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true

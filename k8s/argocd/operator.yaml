@@ -6,9 +6,11 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/ceid1987/homelab
-    path: k8s/operator
-    targetRevision: HEAD
+    repoURL: https://github.com/carleid-homelab/homelab-operator
+    # CI renders the kustomize output here with the image pinned to the commit
+    # that built it. main carries no dist/ directory.
+    path: dist
+    targetRevision: deploy
   destination:
     server: https://kubernetes.default.svc
     namespace: operator-system

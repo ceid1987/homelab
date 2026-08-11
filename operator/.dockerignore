@@ -1,4 +1,0 @@
-# Ignore test files and local tooling
-**/*_test.go
-bin/
-testdata/

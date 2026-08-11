@@ -1,0 +1,15 @@
+# Read by the scmProvider generator in appset.yaml. Without it the generator
+# falls back to anonymous GitHub API calls, which are rate limited to 60/hour
+# and will not sustain the scan interval.
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  name: github-scm-token
+  namespace: argocd
+spec:
+  encryptedData:
+    token: AgAT3aRtulWG7RU/bbBoRVqLgQvjyr+NZ1K/O6cU4wM4XnWb4S38RPOYWRJVldxC7EhrrROREAuIj2R4djmqw6doymvf+mOyWQ5foVkkU+2K1ZJvRWy3pemzQHMKnLmHD20wpgiUOEWHis3ZCakz42BJyDNYBlAyZ8CII1A/MqTKLMgE2O6jsoKBLs1Li+ps8lc9Yfy7LYK4f0+Gk4PBK8Ep2Ik5adx5xEweFW3ojlhw3gntvIqHjXM0XK0eheCIPo3GZZhlRHXbHxtvsc6/0k78s7UEl/9iaaG0jSX3+n/AokjZbYLM9we+C1Prtru5ysH3QLjKVp9t1VwKvQzsDH29RhJnPIxjMY8CWnxdTUxhhouXOSs3VTCFolzsRkgH9dsL0GxQkU1PzQhPivoonLqoF1rs3iMyLJlYNV8+HNNBYIN+cqzcNN1InoOBTkKURWS/4cT02bCIW2kBl4PFrClsSvEHA/QOsWhSIPPEdKyGZ1rGYGo01fSeCrXqWB1NY/Gjie+hNzIuCjrdXZjUpiPHG0wNlQ+A4dlDMvkoHuh/yLfgwgPTtowZ/3E8zI5EObHaWQLdZecXKWDs9RbjJAXGGCnK8vODca6rR5Dbhy5nWMRtY4cDvwORR/AoVdC6dHXinI/D9862cE+V4+MxgSo+gJjLkUZ2KUQ6Yj7LElUX6rVefhhwQrZSFr0pLwB85zu1YiCqeUyCx97Lp5fT91qKUi14ev9rqnqv8NHdU3/OpOJPTXXzJ0e9G2V3fRfZ2+a5JE0OID+XFd0j8ES9b0/zD9KMr7rZE+IdCYbZmpTiEPC3pGuwIUEjskT9Lds=
+  template:
+    metadata:
+      name: github-scm-token
+      namespace: argocd

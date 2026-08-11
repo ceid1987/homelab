@@ -3,6 +3,11 @@ grafana:
     existingSecret: grafana-admin-credentials
     userKey: admin-user
     passwordKey: admin-password
+  service:
+    annotations:
+      # homelab-operator derives the cloudflared ingress list from this
+      # annotation, the same way the applications declare their hostnames.
+      homelab.carleid.dev/domain: grafana.carleid.dev
   persistence:
     enabled: true
     size: 5Gi

@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cloudflared
+  namespace: apps
+data:
+  # Only the skeleton is declared here. homelab-operator owns the ingress list
+  # and rebuilds it from Services annotated with homelab.carleid.dev/domain,
+  # inserting each rule ahead of the catch-all. ArgoCD is told to ignore
+  # data.config.yaml in k8s/argocd/cloudflared-app.yaml so the two do not fight.
+  # On a cold bootstrap the tunnel serves 404 until the operator first runs.
+  config.yaml: |
+    tunnel: vps-cluster-tunnel
+    metrics: 0.0.0.0:2000
+    no-autoupdate: true
+    ingress:
+    - service: http_status:404

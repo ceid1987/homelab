@@ -10,11 +10,12 @@ Currently exposes: [homelab.carleid.dev](https://homelab.carleid.dev), [grafana.
 |---|---|---|
 | Infrastructure | Terraform + hcloud | Hetzner VPS, firewall, SSH keys |
 | Configuration | Ansible | k3s install, ArgoCD bootstrap, tooling |
-| GitOps | ArgoCD | Syncs all Kubernetes manifests from this repo |
+| GitOps | ArgoCD | Syncs the platform from this repo |
+| Discovery | ArgoCD ApplicationSet | Adopts any org repo containing a `deploy/` directory |
 | Secrets | Sealed Secrets (HashiCorp Vault **planned**) | Encrypted secrets |
 | Ingress | Cloudflare Tunnel | Zero-trust exposure, no open inbound ports |
 | Monitoring | kube-prometheus-stack | Prometheus + Grafana + Alertmanager |
-| Operator | homelab-operator (Go) | Automates ArgoCD Application + namespace provisioning |
+| Operator | homelab-operator (Go) | Publishes annotated Services through the tunnel |
 
 
 ## Architecture
@@ -22,11 +23,13 @@ Currently exposes: [homelab.carleid.dev](https://homelab.carleid.dev), [grafana.
 ```
 Hetzner CX33/CX32 (nbg1)
 └── k3s
-    ├── argocd              (watches this repo, reconciles cluster state)
+    ├── argocd              (watches this repo; ApplicationSet scans the org)
     ├── operator-system
     │   └── homelab-operator (custom Kubernetes operator, written in Go)
     ├── apps
-    │   └── cloudflared     (outbound tunnel → Cloudflare → grafana.carleid.dev)
+    │   └── cloudflared     (outbound tunnel → Cloudflare)
+    ├── homelab-web         (discovered from carleid-homelab/homelab-web)
+    ├── homelab-api         (discovered from carleid-homelab/homelab-api)
     └── monitoring
         ├── prometheus
         ├── grafana
@@ -37,43 +40,71 @@ Traffic flow: browser → Cloudflare → cloudflared tunnel → cluster service.
 
 ## Repo structure
 
+This repo holds the platform. Applications live in their own repositories under the
+[carleid-homelab](https://github.com/carleid-homelab) organisation, each carrying its own
+manifests.
+
 ```
-homelab/
-├── operator/           # Go source code for the homelab-operator
-├── terraform/          # Hetzner server + firewall
-├── ansible/            # k3s + ArgoCD bootstrap playbook
+ceid1987/homelab/           # this repo — platform only
+├── terraform/              # Hetzner server + firewall
+├── ansible/                # k3s + ArgoCD bootstrap playbook
 └── k8s/
-    ├── argocd/         # ArgoCD Application manifests
-    ├── apps/           # cloudflared deployment, configmap, sealed secret
-    ├── monitoring/     # kube-prometheus-stack values + sealed secret
-    ├── namespaces/     # namespace definitions
-    └── operator/       # homelab-operator deployment manifests (managed by ArgoCD)
+    ├── argocd/             # ArgoCD Applications + the ApplicationSet
+    ├── platform/           # cloudflared, ArgoCD ServiceMonitor
+    ├── monitoring/         # kube-prometheus-stack values + sealed secret
+    └── namespaces/         # namespace definitions
+
+carleid-homelab/            # one repo per application
+├── homelab-web/            # React dashboard,  source + deploy/
+├── homelab-api/            # Go metrics proxy, source + deploy/
+└── homelab-operator/       # the operator's Go source
 ```
+
+## Adding an application
+
+An `ApplicationSet` in `k8s/argocd/appset.yaml` scans the organisation and adopts every repo
+containing a `deploy/` directory:
+
+```yaml
+generators:
+  - scmProvider:
+      github:
+        organization: carleid-homelab
+      filters:
+        - pathsExist: [deploy]
+```
+
+So adding an application to the cluster is: create the repo, add `deploy/`, push. ArgoCD
+creates the `Application` and its namespace. Nothing in this repo changes.
+
+To expose it publicly, annotate its Service with the hostname:
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-app
+  annotations:
+    homelab.carleid.dev/domain: my-app.carleid.dev
+```
+
+Each app repo builds its own image in CI, writes the immutable tag into its manifests, and
+publishes the result to a `deploy` branch. ArgoCD tracks that branch, never `main`.
 
 ## homelab-operator
 
-A custom Kubernetes operator written in Go using [controller-runtime](https://github.com/kubernetes-sigs/controller-runtime). It introduces a `HomelabApp` custom resource that encodes the repetitive work of adding a new application to the cluster.
+[carleid-homelab/homelab-operator](https://github.com/carleid-homelab/homelab-operator) — a
+controller written in Go with [controller-runtime](https://github.com/kubernetes-sigs/controller-runtime).
 
-Applying a single manifest:
+It watches Services carrying `homelab.carleid.dev/domain` and rebuilds the cloudflared ingress
+list from them, then stamps a digest of the rendered config onto the tunnel's pod template so
+the pods roll and read it — a locally-managed cloudflared only reads its config at startup.
 
-```yaml
-apiVersion: homelab.carleid.dev/v1alpha1
-kind: HomelabApp
-metadata:
-  name: my-app
-  namespace: default
-spec:
-  repo: https://github.com/ceid1987/homelab
-  path: k8s/apps/my-app
-  domain: my-app.carleid.dev
-  targetNamespace: my-app
-```
+Rebuilding the list wholesale rather than patching individual rules means deleted Services and
+removed annotations need no special handling, and no finalizer is required.
 
-Automatically triggers the operator to:
-1. Create the target namespace
-2. Create an ArgoCD `Application` pointing at the specified repo path
-
-The operator image is published at `ghcr.io/ceid1987/homelab-operator` and deployed to the cluster via ArgoCD from `k8s/operator/`.
+The image is published at `ghcr.io/carleid-homelab/homelab-operator` and deployed by ArgoCD
+from that repo's `deploy` branch.
 
 ## Rebuild from scratch
 
@@ -109,7 +140,7 @@ This installs k3s, restores the Sealed Secrets master key, installs ArgoCD, and 
 
 ### 3. Done
 
-ArgoCD reconciles cloudflared, Grafana, Prometheus, and the homelab-operator from the manifests in `k8s/`. No further manual steps.
+ArgoCD reconciles cloudflared, Grafana, Prometheus, and the homelab-operator from the manifests in `k8s/`, then discovers the applications from the organisation. No further manual steps.
 
 ## Day-to-day workflow
 
@@ -119,7 +150,7 @@ Changes to the cluster are made by editing manifests and pushing to `main`. Argo
 edit manifest → git push → ArgoCD syncs → cluster updated
 ```
 
-To add a new application, create a `HomelabApp` manifest and commit it. The operator handles the rest.
+Application changes are pushed to their own repositories, where CI builds the image and ArgoCD picks up the result. This repo only changes when the platform itself does.
 
 `kubectl` is only used for debugging and inspection.
 
@@ -133,7 +164,11 @@ To add a new application, create a `HomelabApp` manifest and commit it. The oper
 
 **Single-node** — this is a homelab :)
 
-**Custom operator over manual manifests** — repetitive patterns (namespace + ArgoCD Application per app) are encoded once in Go rather than copy-pasted. The operator is itself managed by ArgoCD, making it part of the GitOps flow.
+**Operator scoped to what ArgoCD cannot do** — an earlier version created namespaces and ArgoCD `Application`s from a `HomelabApp` CRD. Both are native ArgoCD features (`CreateNamespace=true` and `ApplicationSet`), so that code was deleted. What remains is cloudflared route management, which has no off-the-shelf equivalent for a locally-managed tunnel. The operator is itself managed by ArgoCD, making it part of the GitOps flow.
+
+**A rendered `deploy` branch per repo** — CI builds the image, writes the immutable SHA tag into the manifests, and force-pushes the result to a `deploy` branch that ArgoCD tracks. Pinning a digest rather than `:latest` is what makes ArgoCD notice a new build at all; publishing to a separate branch keeps `main` free of bot commits, so a clone is never left behind after a push. Same dry-source/hydrated-branch split as ArgoCD's own source hydrator.
+
+**One repo per application** — application code and infrastructure have different lifecycles, reviewers and CI. Co-locating each app's manifests with its source means a change to both is one commit, and the ApplicationSet turns "new repo" into "new deployment" with no central registry to update.
 
 ## Secrets
 
