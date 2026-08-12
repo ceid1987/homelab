@@ -151,9 +151,27 @@
       register: argo_install
       changed_when: "'created' in argo_install.stdout or 'configured' in argo_install.stdout"
 
-    - name: Wait for the ArgoCD server rollout
+    # A partial apply above is indistinguishable from a successful one: the
+    # workloads start regardless, and a missing CRD only surfaces later, when
+    # something first tries to use that type.
+    - name: Wait for the ArgoCD CRDs to be established
       ansible.builtin.command: >
-        kubectl rollout status deploy/argocd-server -n argocd --timeout=300s
+        kubectl wait --for=condition=established --timeout=120s
+        crd/applications.argoproj.io
+        crd/appprojects.argoproj.io
+        crd/applicationsets.argoproj.io
+      environment:
+        KUBECONFIG: "{{ kubeconfig }}"
+      changed_when: false
+
+    # The applicationset controller crashes on startup if its CRD is absent,
+    # which is how the whole application layer silently fails to deploy.
+    - name: Wait for the ArgoCD rollouts
+      ansible.builtin.command: >
+        kubectl rollout status deploy/{{ item }} -n argocd --timeout=300s
+      loop:
+        - argocd-server
+        - argocd-applicationset-controller
       environment:
         KUBECONFIG: "{{ kubeconfig }}"
       changed_when: false

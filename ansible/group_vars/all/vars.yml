@@ -20,7 +20,10 @@ namespaces:
   - monitoring
 
 # Upstream manifests
-argocd_manifest: "https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml"
+# Pinned so that re-running the playbook reproduces the running cluster rather
+# than upgrading it as a side effect. Bump deliberately.
+argocd_version: "v3.4.3"
+argocd_manifest: "https://raw.githubusercontent.com/argoproj/argo-cd/{{ argocd_version }}/manifests/install.yaml"
 sealed_secrets_manifest: "https://github.com/bitnami-labs/sealed-secrets/releases/latest/download/controller.yaml"
 
 # Hetzner Object Storage
