@@ -45,7 +45,7 @@ This repo holds the platform. Applications live in their own repositories under 
 manifests.
 
 ```
-ceid1987/homelab/           # this repo — platform only
+carleid-homelab/homelab/    # this repo — platform only
 ├── terraform/              # Hetzner server + firewall
 ├── ansible/                # k3s + ArgoCD bootstrap playbook
 └── k8s/

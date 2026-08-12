@@ -14,7 +14,7 @@ spec:
       helm:
         valueFiles:
         - $values/k8s/monitoring/grafana/values.yaml
-    - repoURL: https://github.com/ceid1987/homelab.git
+    - repoURL: https://github.com/carleid-homelab/homelab.git
       targetRevision: HEAD
       ref: values
   destination:
