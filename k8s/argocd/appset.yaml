@@ -19,11 +19,13 @@ spec:
           tokenRef:
             secretName: github-scm-token
             key: token
-        # The sole guard against pulling in unrelated repositories. Repos
-        # without a deploy/ directory on their default branch are skipped,
-        # which is why homelab-operator is not picked up here.
+        # Both conditions must pass. A repository joins the cluster only when
+        # it carries manifests and has been topic-tagged homelab-app, so
+        # templates, scratch repos and the platform repo itself stay out
+        # without needing to be named in an exclusion list.
         filters:
           - pathsExist: [deploy]
+            labelMatch: homelab-app
   # create-update means a failed scan can never prune live Applications; a
   # deleted repo has to be cleaned up by hand.
   syncPolicy:

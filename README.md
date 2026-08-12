@@ -63,7 +63,7 @@ carleid-homelab/            # one repo per application
 ## Adding an application
 
 An `ApplicationSet` in `k8s/argocd/appset.yaml` scans the organisation and adopts every repo
-containing a `deploy/` directory:
+that both carries a `deploy/` directory and is tagged with the `homelab-app` topic:
 
 ```yaml
 generators:
@@ -72,10 +72,21 @@ generators:
         organization: carleid-homelab
       filters:
         - pathsExist: [deploy]
+          labelMatch: homelab-app
 ```
 
-So adding an application to the cluster is: create the repo, add `deploy/`, push. ArgoCD
-creates the `Application` and its namespace. Nothing in this repo changes.
+Both conditions must pass, so a repo joins the cluster only when it is explicitly opted in.
+Templates, experiments and this repo stay out without appearing in any exclusion list.
+
+Adding an application is two commands, and nothing in this repo changes:
+
+```bash
+gh repo create carleid-homelab/my-app --template carleid-homelab/homelab-app-template --public
+gh repo edit carleid-homelab/my-app --add-topic homelab-app
+```
+
+The topic is a separate step because GitHub does not copy topics to repos created from a
+template — which is exactly what keeps the template itself undeployed.
 
 To expose it publicly, annotate its Service with the hostname:
 
