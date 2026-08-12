@@ -24,7 +24,10 @@ namespaces:
 # than upgrading it as a side effect. Bump deliberately.
 argocd_version: "v3.4.3"
 argocd_manifest: "https://raw.githubusercontent.com/argoproj/argo-cd/{{ argocd_version }}/manifests/install.yaml"
-sealed_secrets_manifest: "https://github.com/bitnami-labs/sealed-secrets/releases/latest/download/controller.yaml"
+# Release tags carry a v prefix, the container image tag does not: the running
+# image reports 0.37.0 while the release asset lives under v0.37.0.
+sealed_secrets_version: "v0.37.0"
+sealed_secrets_manifest: "https://github.com/bitnami-labs/sealed-secrets/releases/download/{{ sealed_secrets_version }}/controller.yaml"
 
 # Hetzner Object Storage
 hetzner_s3_endpoint: "nbg1.your-objectstorage.com"
