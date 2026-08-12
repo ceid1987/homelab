@@ -11,6 +11,9 @@ spec:
   goTemplateOptions: ["missingkey=error"]
   generators:
     - scmProvider:
+        # Defaults to ssh, which the repo-server cannot use: it has no SSH
+        # agent or deploy key, and fails with SSH_AUTH_SOCK not-specified.
+        cloneProtocol: https
         github:
           organization: carleid-homelab
           tokenRef:
